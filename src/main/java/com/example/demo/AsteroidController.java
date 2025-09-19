@@ -8,9 +8,6 @@ import org.springframework.web.client.RestTemplate;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @RestController
 @RequestMapping("/nasa")
 public class AsteroidController {
@@ -19,7 +16,7 @@ public class AsteroidController {
     private final String API_KEY  = "uWLLsqN6wvM5osNWqb5boU5goqIyv4qK3oN7czLa"; 
 
     @GetMapping("/asteroids")
-    public List<Asteroid> getAsteroids(
+    public String getAsteroids(
             @RequestParam String start_date,
             @RequestParam String end_date) {
 
@@ -35,7 +32,7 @@ public class AsteroidController {
         JSONObject jsonResponse = new JSONObject(response);
         JSONObject nearEarthObjects = jsonResponse.getJSONObject("near_earth_objects");
 
-        List<Asteroid> result = new ArrayList<>();
+        StringBuilder result = new StringBuilder();
 
         // El JSON trae un objeto con claves = fechas (ej: "2025-09-18")
         for (String date : nearEarthObjects.keySet()) {
@@ -52,10 +49,21 @@ public class AsteroidController {
                         .getDouble("estimated_diameter_max");
                 boolean isHazardous = asteroid.getBoolean("is_potentially_hazardous_asteroid");
 
-                result.add(new Asteroid(name, estimatedDiameter, isHazardous, nasaJplUrl, date));
+                // Add raw values separated by commas
+                if (isHazardous) {
+                    result.append(name).append(", ")
+                            .append(estimatedDiameter).append(", ")
+                            .append(isHazardous).append(", ")
+                            .append(nasaJplUrl).append(", ")
+                            .append(date).append("\n");
+                }
             }
         }
 
-        return result;
+        if (result.length() == 0) {
+            return "No hazardous asteroids were found from " + start_date + " to " + end_date;
+        }
+
+        return result.toString();
     }
 }
